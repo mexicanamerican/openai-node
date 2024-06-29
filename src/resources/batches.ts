@@ -1,10 +1,10 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import * as Core from 'openai/core';
-import { APIResource } from 'openai/resource';
-import { isRequestOptions } from 'openai/core';
-import * as BatchesAPI from 'openai/resources/batches';
-import { CursorPage, type CursorPageParams } from 'openai/pagination';
+import { APIResource } from '../resource';
+import { isRequestOptions } from '../core';
+import * as Core from '../core';
+import * as BatchesAPI from './batches';
+import { CursorPage, type CursorPageParams } from '../pagination';
 
 export class Batches extends APIResource {
   /**
@@ -37,7 +37,9 @@ export class Batches extends APIResource {
   }
 
   /**
-   * Cancels an in-progress batch.
+   * Cancels an in-progress batch. The batch will be in status `cancelling` for up to
+   * 10 minutes, before changing to `cancelled`, where it will have partial results
+   * (if any) available in the output file.
    */
   cancel(batchId: string, options?: Core.RequestOptions): Core.APIPromise<Batch> {
     return this._client.post(`/batches/${batchId}/cancel`, options);
@@ -57,7 +59,7 @@ export interface Batch {
   /**
    * The Unix timestamp (in seconds) for when the batch was created.
    */
-  created_at: string;
+  created_at: number;
 
   /**
    * The OpenAI API endpoint used by the batch.
@@ -90,17 +92,17 @@ export interface Batch {
   /**
    * The Unix timestamp (in seconds) for when the batch was cancelled.
    */
-  cancelled_at?: string;
+  cancelled_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch started cancelling.
    */
-  cancelling_at?: string;
+  cancelling_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch was completed.
    */
-  completed_at?: string;
+  completed_at?: number;
 
   /**
    * The ID of the file containing the outputs of requests with errors.
@@ -112,27 +114,27 @@ export interface Batch {
   /**
    * The Unix timestamp (in seconds) for when the batch expired.
    */
-  expired_at?: string;
+  expired_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch will expire.
    */
-  expires_at?: string;
+  expires_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch failed.
    */
-  failed_at?: string;
+  failed_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch started finalizing.
    */
-  finalizing_at?: string;
+  finalizing_at?: number;
 
   /**
    * The Unix timestamp (in seconds) for when the batch started processing.
    */
-  in_progress_at?: string;
+  in_progress_at?: number;
 
   /**
    * Set of 16 key-value pairs that can be attached to an object. This can be useful
@@ -214,10 +216,12 @@ export interface BatchCreateParams {
   completion_window: '24h';
 
   /**
-   * The endpoint to be used for all requests in the batch. Currently only
-   * `/v1/chat/completions` is supported.
+   * The endpoint to be used for all requests in the batch. Currently
+   * `/v1/chat/completions`, `/v1/embeddings`, and `/v1/completions` are supported.
+   * Note that `/v1/embeddings` batches are also restricted to a maximum of 50,000
+   * embedding inputs across all requests in the batch.
    */
-  endpoint: '/v1/chat/completions';
+  endpoint: '/v1/chat/completions' | '/v1/embeddings' | '/v1/completions';
 
   /**
    * The ID of an uploaded file that contains requests for the new batch.
@@ -225,8 +229,10 @@ export interface BatchCreateParams {
    * See [upload file](https://platform.openai.com/docs/api-reference/files/create)
    * for how to upload a file.
    *
-   * Your input file must be formatted as a JSONL file, and must be uploaded with the
-   * purpose `batch`.
+   * Your input file must be formatted as a
+   * [JSONL file](https://platform.openai.com/docs/api-reference/batch/request-input),
+   * and must be uploaded with the purpose `batch`. The file can contain up to 50,000
+   * requests, and can be up to 100 MB in size.
    */
   input_file_id: string;
 

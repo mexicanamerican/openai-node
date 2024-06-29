@@ -1,15 +1,15 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import * as Core from 'openai/core';
-import { APIResource } from 'openai/resource';
-import { isRequestOptions } from 'openai/core';
-import { sleep } from 'openai/core';
-import { Uploadable } from 'openai/core';
-import { allSettledWithThrow } from 'openai/lib/Util';
-import * as FileBatchesAPI from 'openai/resources/beta/vector-stores/file-batches';
-import * as FilesAPI from 'openai/resources/beta/vector-stores/files';
-import { VectorStoreFilesPage } from 'openai/resources/beta/vector-stores/files';
-import { type CursorPageParams } from 'openai/pagination';
+import { APIResource } from '../../../resource';
+import { isRequestOptions } from '../../../core';
+import { sleep } from '../../../core';
+import { Uploadable } from '../../../core';
+import { allSettledWithThrow } from '../../../lib/Util';
+import * as Core from '../../../core';
+import * as FileBatchesAPI from './file-batches';
+import * as FilesAPI from './files';
+import { VectorStoreFilesPage } from './files';
+import { type CursorPageParams } from '../../../pagination';
 
 export class FileBatches extends APIResource {
   /**
@@ -138,6 +138,7 @@ export class FileBatches extends APIResource {
           await sleep(sleepInterval);
           break;
         case 'failed':
+        case 'cancelled':
         case 'completed':
           return batch;
       }
@@ -260,6 +261,53 @@ export interface FileBatchCreateParams {
    * files.
    */
   file_ids: Array<string>;
+
+  /**
+   * The chunking strategy used to chunk the file(s). If not set, will use the `auto`
+   * strategy.
+   */
+  chunking_strategy?:
+    | FileBatchCreateParams.AutoChunkingStrategyRequestParam
+    | FileBatchCreateParams.StaticChunkingStrategyRequestParam;
+}
+
+export namespace FileBatchCreateParams {
+  /**
+   * The default strategy. This strategy currently uses a `max_chunk_size_tokens` of
+   * `800` and `chunk_overlap_tokens` of `400`.
+   */
+  export interface AutoChunkingStrategyRequestParam {
+    /**
+     * Always `auto`.
+     */
+    type: 'auto';
+  }
+
+  export interface StaticChunkingStrategyRequestParam {
+    static: StaticChunkingStrategyRequestParam.Static;
+
+    /**
+     * Always `static`.
+     */
+    type: 'static';
+  }
+
+  export namespace StaticChunkingStrategyRequestParam {
+    export interface Static {
+      /**
+       * The number of tokens that overlap between chunks. The default value is `400`.
+       *
+       * Note that the overlap must not exceed half of `max_chunk_size_tokens`.
+       */
+      chunk_overlap_tokens: number;
+
+      /**
+       * The maximum number of tokens in each chunk. The default value is `800`. The
+       * minimum value is `100` and the maximum value is `4096`.
+       */
+      max_chunk_size_tokens: number;
+    }
+  }
 }
 
 export interface FileBatchListFilesParams extends CursorPageParams {

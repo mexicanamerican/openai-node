@@ -41,6 +41,7 @@ Types:
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionMessageToolCall</a></code>
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionNamedToolChoice</a></code>
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionRole</a></code>
+- <code><a href="./src/resources/chat/completions.ts">ChatCompletionStreamOptions</a></code>
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionSystemMessageParam</a></code>
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionTokenLogprob</a></code>
 - <code><a href="./src/resources/chat/completions.ts">ChatCompletionTool</a></code>
@@ -348,14 +349,20 @@ Types:
 - <code><a href="./src/resources/beta/threads/messages.ts">ImageFileContentBlock</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">ImageFileDelta</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">ImageFileDeltaBlock</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">ImageURL</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">ImageURLContentBlock</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">ImageURLDelta</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">ImageURLDeltaBlock</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">Message</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">MessageContent</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">MessageContentDelta</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">MessageContentPartParam</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">MessageDeleted</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">MessageDelta</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">MessageDeltaEvent</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">Text</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">TextContentBlock</a></code>
+- <code><a href="./src/resources/beta/threads/messages.ts">TextContentBlockParam</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">TextDelta</a></code>
 - <code><a href="./src/resources/beta/threads/messages.ts">TextDeltaBlock</a></code>
 
@@ -365,6 +372,7 @@ Methods:
 - <code title="get /threads/{thread_id}/messages/{message_id}">client.beta.threads.messages.<a href="./src/resources/beta/threads/messages.ts">retrieve</a>(threadId, messageId) -> Message</code>
 - <code title="post /threads/{thread_id}/messages/{message_id}">client.beta.threads.messages.<a href="./src/resources/beta/threads/messages.ts">update</a>(threadId, messageId, { ...params }) -> Message</code>
 - <code title="get /threads/{thread_id}/messages">client.beta.threads.messages.<a href="./src/resources/beta/threads/messages.ts">list</a>(threadId, { ...params }) -> MessagesPage</code>
+- <code title="delete /threads/{thread_id}/messages/{message_id}">client.beta.threads.messages.<a href="./src/resources/beta/threads/messages.ts">del</a>(threadId, messageId) -> MessageDeleted</code>
 
 # Batches
 

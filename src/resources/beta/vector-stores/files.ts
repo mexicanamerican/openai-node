@@ -1,11 +1,10 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import * as Core from 'openai/core';
-import { APIResource } from 'openai/resource';
-import { isRequestOptions } from 'openai/core';
-import { sleep, Uploadable } from 'openai/core';
-import * as FilesAPI from 'openai/resources/beta/vector-stores/files';
-import { CursorPage, type CursorPageParams } from 'openai/pagination';
+import { APIResource } from '../../../resource';
+import { sleep, Uploadable, isRequestOptions } from '../../../core';
+import * as Core from '../../../core';
+import * as FilesAPI from './files';
+import { CursorPage, type CursorPageParams } from '../../../pagination';
 
 export class Files extends APIResource {
   /**
@@ -144,6 +143,7 @@ export class Files extends APIResource {
 
   /**
    * Upload a file to the `files` API and then attach it to the given vector store.
+   *
    * Note the file will be asynchronously processed (you can use the alternative
    * polling helper method to wait for processing to complete).
    */
@@ -164,7 +164,7 @@ export class Files extends APIResource {
     file: Uploadable,
     options?: Core.RequestOptions & { pollIntervalMs?: number },
   ): Promise<VectorStoreFile> {
-    const fileInfo = await this._client.files.create({ file: file, purpose: 'assistants' }, options);
+    const fileInfo = await this.upload(vectorStoreId, file, options);
     return await this.poll(vectorStoreId, fileInfo.id, options);
   }
 }
@@ -204,12 +204,23 @@ export interface VectorStoreFile {
   status: 'in_progress' | 'completed' | 'cancelled' | 'failed';
 
   /**
+   * The total vector store usage in bytes. Note that this may be different from the
+   * original file size.
+   */
+  usage_bytes: number;
+
+  /**
    * The ID of the
    * [vector store](https://platform.openai.com/docs/api-reference/vector-stores/object)
    * that the [File](https://platform.openai.com/docs/api-reference/files) is
    * attached to.
    */
   vector_store_id: string;
+
+  /**
+   * The strategy used to chunk the file.
+   */
+  chunking_strategy?: VectorStoreFile.Static | VectorStoreFile.Other;
 }
 
 export namespace VectorStoreFile {
@@ -228,6 +239,44 @@ export namespace VectorStoreFile {
      */
     message: string;
   }
+
+  export interface Static {
+    static: Static.Static;
+
+    /**
+     * Always `static`.
+     */
+    type: 'static';
+  }
+
+  export namespace Static {
+    export interface Static {
+      /**
+       * The number of tokens that overlap between chunks. The default value is `400`.
+       *
+       * Note that the overlap must not exceed half of `max_chunk_size_tokens`.
+       */
+      chunk_overlap_tokens: number;
+
+      /**
+       * The maximum number of tokens in each chunk. The default value is `800`. The
+       * minimum value is `100` and the maximum value is `4096`.
+       */
+      max_chunk_size_tokens: number;
+    }
+  }
+
+  /**
+   * This is returned when the chunking strategy is unknown. Typically, this is
+   * because the file was indexed before the `chunking_strategy` concept was
+   * introduced in the API.
+   */
+  export interface Other {
+    /**
+     * Always `other`.
+     */
+    type: 'other';
+  }
 }
 
 export interface VectorStoreFileDeleted {
@@ -245,6 +294,53 @@ export interface FileCreateParams {
    * files.
    */
   file_id: string;
+
+  /**
+   * The chunking strategy used to chunk the file(s). If not set, will use the `auto`
+   * strategy.
+   */
+  chunking_strategy?:
+    | FileCreateParams.AutoChunkingStrategyRequestParam
+    | FileCreateParams.StaticChunkingStrategyRequestParam;
+}
+
+export namespace FileCreateParams {
+  /**
+   * The default strategy. This strategy currently uses a `max_chunk_size_tokens` of
+   * `800` and `chunk_overlap_tokens` of `400`.
+   */
+  export interface AutoChunkingStrategyRequestParam {
+    /**
+     * Always `auto`.
+     */
+    type: 'auto';
+  }
+
+  export interface StaticChunkingStrategyRequestParam {
+    static: StaticChunkingStrategyRequestParam.Static;
+
+    /**
+     * Always `static`.
+     */
+    type: 'static';
+  }
+
+  export namespace StaticChunkingStrategyRequestParam {
+    export interface Static {
+      /**
+       * The number of tokens that overlap between chunks. The default value is `400`.
+       *
+       * Note that the overlap must not exceed half of `max_chunk_size_tokens`.
+       */
+      chunk_overlap_tokens: number;
+
+      /**
+       * The maximum number of tokens in each chunk. The default value is `800`. The
+       * minimum value is `100` and the maximum value is `4096`.
+       */
+      max_chunk_size_tokens: number;
+    }
+  }
 }
 
 export interface FileListParams extends CursorPageParams {

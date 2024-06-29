@@ -1,10 +1,11 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import * as Core from 'openai/core';
-import { APIResource } from 'openai/resource';
-import { isRequestOptions } from 'openai/core';
-import * as MessagesAPI from 'openai/resources/beta/threads/messages';
-import { CursorPage, type CursorPageParams } from 'openai/pagination';
+import { APIResource } from '../../../resource';
+import { isRequestOptions } from '../../../core';
+import * as Core from '../../../core';
+import * as MessagesAPI from './messages';
+import * as AssistantsAPI from '../assistants';
+import { CursorPage, type CursorPageParams } from '../../../pagination';
 
 export class Messages extends APIResource {
   /**
@@ -71,6 +72,16 @@ export class Messages extends APIResource {
       headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
     });
   }
+
+  /**
+   * Deletes a message.
+   */
+  del(threadId: string, messageId: string, options?: Core.RequestOptions): Core.APIPromise<MessageDeleted> {
+    return this._client.delete(`/threads/${threadId}/messages/${messageId}`, {
+      ...options,
+      headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+    });
+  }
 }
 
 export class MessagesPage extends CursorPage<Message> {}
@@ -118,11 +129,6 @@ export namespace FileCitationAnnotation {
      * The ID of the specific File the citation is from.
      */
     file_id: string;
-
-    /**
-     * The specific quote in the file.
-     */
-    quote: string;
   }
 }
 
@@ -238,9 +244,16 @@ export namespace FilePathDeltaAnnotation {
 export interface ImageFile {
   /**
    * The [File](https://platform.openai.com/docs/api-reference/files) ID of the image
-   * in the message content.
+   * in the message content. Set `purpose="vision"` when uploading the File if you
+   * need to later display the file content.
    */
   file_id: string;
+
+  /**
+   * Specifies the detail level of the image if specified by the user. `low` uses
+   * fewer tokens, you can opt in to high resolution using `high`.
+   */
+  detail?: 'auto' | 'low' | 'high';
 }
 
 /**
@@ -258,8 +271,15 @@ export interface ImageFileContentBlock {
 
 export interface ImageFileDelta {
   /**
+   * Specifies the detail level of the image if specified by the user. `low` uses
+   * fewer tokens, you can opt in to high resolution using `high`.
+   */
+  detail?: 'auto' | 'low' | 'high';
+
+  /**
    * The [File](https://platform.openai.com/docs/api-reference/files) ID of the image
-   * in the message content.
+   * in the message content. Set `purpose="vision"` when uploading the File if you
+   * need to later display the file content.
    */
   file_id?: string;
 }
@@ -280,6 +300,63 @@ export interface ImageFileDeltaBlock {
   type: 'image_file';
 
   image_file?: ImageFileDelta;
+}
+
+export interface ImageURL {
+  /**
+   * The external URL of the image, must be a supported image types: jpeg, jpg, png,
+   * gif, webp.
+   */
+  url: string;
+
+  /**
+   * Specifies the detail level of the image. `low` uses fewer tokens, you can opt in
+   * to high resolution using `high`. Default value is `auto`
+   */
+  detail?: 'auto' | 'low' | 'high';
+}
+
+/**
+ * References an image URL in the content of a message.
+ */
+export interface ImageURLContentBlock {
+  image_url: ImageURL;
+
+  /**
+   * The type of the content part.
+   */
+  type: 'image_url';
+}
+
+export interface ImageURLDelta {
+  /**
+   * Specifies the detail level of the image. `low` uses fewer tokens, you can opt in
+   * to high resolution using `high`.
+   */
+  detail?: 'auto' | 'low' | 'high';
+
+  /**
+   * The URL of the image, must be a supported image types: jpeg, jpg, png, gif,
+   * webp.
+   */
+  url?: string;
+}
+
+/**
+ * References an image URL in the content of a message.
+ */
+export interface ImageURLDeltaBlock {
+  /**
+   * The index of the content part in the message.
+   */
+  index: number;
+
+  /**
+   * Always `image_url`.
+   */
+  type: 'image_url';
+
+  image_url?: ImageURLDelta;
 }
 
 /**
@@ -369,12 +446,24 @@ export interface Message {
 
 export namespace Message {
   export interface Attachment {
-    add_to?: Array<'file_search' | 'code_interpreter'>;
-
     /**
      * The ID of the file to attach to the message.
      */
     file_id?: string;
+
+    /**
+     * The tools to add this file to.
+     */
+    tools?: Array<AssistantsAPI.CodeInterpreterTool | Attachment.AssistantToolsFileSearchTypeOnly>;
+  }
+
+  export namespace Attachment {
+    export interface AssistantToolsFileSearchTypeOnly {
+      /**
+       * The type of tool being defined: `file_search`
+       */
+      type: 'file_search';
+    }
   }
 
   /**
@@ -392,13 +481,19 @@ export namespace Message {
  * References an image [File](https://platform.openai.com/docs/api-reference/files)
  * in the content of a message.
  */
-export type MessageContent = ImageFileContentBlock | TextContentBlock;
+export type MessageContent = ImageFileContentBlock | ImageURLContentBlock | TextContentBlock;
 
 /**
  * References an image [File](https://platform.openai.com/docs/api-reference/files)
  * in the content of a message.
  */
-export type MessageContentDelta = ImageFileDeltaBlock | TextDeltaBlock;
+export type MessageContentDelta = ImageFileDeltaBlock | TextDeltaBlock | ImageURLDeltaBlock;
+
+/**
+ * References an image [File](https://platform.openai.com/docs/api-reference/files)
+ * in the content of a message.
+ */
+export type MessageContentPartParam = ImageFileContentBlock | ImageURLContentBlock | TextContentBlockParam;
 
 export interface MessageDeleted {
   id: string;
@@ -465,6 +560,21 @@ export interface TextContentBlock {
   type: 'text';
 }
 
+/**
+ * The text content that is part of a message.
+ */
+export interface TextContentBlockParam {
+  /**
+   * Text content to be sent to the model
+   */
+  text: string;
+
+  /**
+   * Always `text`.
+   */
+  type: 'text';
+}
+
 export interface TextDelta {
   annotations?: Array<AnnotationDelta>;
 
@@ -493,9 +603,9 @@ export interface TextDeltaBlock {
 
 export interface MessageCreateParams {
   /**
-   * The content of the message.
+   * The text contents of the message.
    */
-  content: string;
+  content: string | Array<MessageContentPartParam>;
 
   /**
    * The role of the entity that is creating the message. Allowed values include:
@@ -523,12 +633,24 @@ export interface MessageCreateParams {
 
 export namespace MessageCreateParams {
   export interface Attachment {
-    add_to?: Array<'file_search' | 'code_interpreter'>;
-
     /**
      * The ID of the file to attach to the message.
      */
     file_id?: string;
+
+    /**
+     * The tools to add this file to.
+     */
+    tools?: Array<AssistantsAPI.CodeInterpreterTool | Attachment.FileSearch>;
+  }
+
+  export namespace Attachment {
+    export interface FileSearch {
+      /**
+       * The type of tool being defined: `file_search`
+       */
+      type: 'file_search';
+    }
   }
 }
 
@@ -574,14 +696,20 @@ export namespace Messages {
   export import ImageFileContentBlock = MessagesAPI.ImageFileContentBlock;
   export import ImageFileDelta = MessagesAPI.ImageFileDelta;
   export import ImageFileDeltaBlock = MessagesAPI.ImageFileDeltaBlock;
+  export import ImageURL = MessagesAPI.ImageURL;
+  export import ImageURLContentBlock = MessagesAPI.ImageURLContentBlock;
+  export import ImageURLDelta = MessagesAPI.ImageURLDelta;
+  export import ImageURLDeltaBlock = MessagesAPI.ImageURLDeltaBlock;
   export import Message = MessagesAPI.Message;
   export import MessageContent = MessagesAPI.MessageContent;
   export import MessageContentDelta = MessagesAPI.MessageContentDelta;
+  export import MessageContentPartParam = MessagesAPI.MessageContentPartParam;
   export import MessageDeleted = MessagesAPI.MessageDeleted;
   export import MessageDelta = MessagesAPI.MessageDelta;
   export import MessageDeltaEvent = MessagesAPI.MessageDeltaEvent;
   export import Text = MessagesAPI.Text;
   export import TextContentBlock = MessagesAPI.TextContentBlock;
+  export import TextContentBlockParam = MessagesAPI.TextContentBlockParam;
   export import TextDelta = MessagesAPI.TextDelta;
   export import TextDeltaBlock = MessagesAPI.TextDeltaBlock;
   export import MessagesPage = MessagesAPI.MessagesPage;
